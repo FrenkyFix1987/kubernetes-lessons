@@ -97,9 +97,9 @@ jobs:
         with:
           images: ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}
           tags: |
+            type=sha,prefix={{branch}}-
             type=ref,event=branch
             type=ref,event=pr
-            type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
