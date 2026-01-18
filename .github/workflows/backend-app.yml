@@ -74,7 +74,7 @@ jobs:
     if: github.event_name != 'pull_request'
     
     outputs:
-      image-tag: ${{ steps.meta.outputs.tags }}
+      image-tag: ${{ steps.image-tag.outputs.tag }}
       image-digest: ${{ steps.build.outputs.digest }}
     
     steps:
@@ -119,10 +119,19 @@ jobs:
             DATABASE_URL=${{ secrets.DATABASE_URL }}
             AZURE_STORAGE_CONNECTION_STRING=${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}
 
+      - name: Extract single image tag for deployment
+        id: image-tag
+        run: |
+          # Extract the first tag from the metadata output
+          FULL_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)
+          echo "tag=$FULL_TAG" >> $GITHUB_OUTPUT
+          echo "Using image tag: $FULL_TAG"
+
       - name: Output image details
         run: |
           echo "Image pushed successfully!"
-          echo "Tags: ${{ steps.meta.outputs.tags }}"
+          echo "All tags: ${{ steps.meta.outputs.tags }}"
+          echo "Deployment tag: ${{ steps.image-tag.outputs.tag }}"
           echo "Digest: ${{ steps.build.outputs.digest }}"
 
   deploy-to-aks:
