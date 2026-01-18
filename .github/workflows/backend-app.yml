@@ -122,7 +122,7 @@ jobs:
         id: image-tag
         run: |
           # Extract just the tag name (without registry path) from the first tag
-          FULL_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)
+          FULL_TAG=$(echo "${{ steps.meta.outputs.tags }}" | grep -v latest | head -n 1)
           TAG_ONLY=$(echo "$FULL_TAG" | cut -d':' -f2)
           echo "tag=$TAG_ONLY" >> $GITHUB_OUTPUT
           echo "Using tag name: $TAG_ONLY"
