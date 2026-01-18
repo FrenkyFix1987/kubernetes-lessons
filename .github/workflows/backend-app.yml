@@ -122,16 +122,17 @@ jobs:
       - name: Extract single image tag for deployment
         id: image-tag
         run: |
-          # Extract the first tag from the metadata output
+          # Extract just the tag name (without registry path) from the first tag
           FULL_TAG=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)
-          echo "tag=$FULL_TAG" >> $GITHUB_OUTPUT
-          echo "Using image tag: $FULL_TAG"
+          TAG_ONLY=$(echo "$FULL_TAG" | cut -d':' -f2)
+          echo "tag=$TAG_ONLY" >> $GITHUB_OUTPUT
+          echo "Using tag name: $TAG_ONLY"
 
       - name: Output image details
         run: |
           echo "Image pushed successfully!"
           echo "All tags: ${{ steps.meta.outputs.tags }}"
-          echo "Deployment tag: ${{ steps.image-tag.outputs.tag }}"
+          echo "Deployment tag name: ${{ steps.image-tag.outputs.tag }}"
           echo "Digest: ${{ steps.build.outputs.digest }}"
 
   deploy-to-aks:
@@ -157,8 +158,9 @@ jobs:
 
       - name: Deploy to AKS
         run: |
-          # Get the image tag
-          IMAGE_TAG="${{ needs.build-and-push.outputs.image-tag }}"
+          # Reconstruct the full image reference from registry and tag
+          IMAGE_TAG="${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ needs.build-and-push.outputs.image-tag }}"
+          echo "Deploying image: $IMAGE_TAG"
           
           # Check if deployment manifests exist
           if [ -f "backend-app/k8s/deployment.yaml" ]; then
