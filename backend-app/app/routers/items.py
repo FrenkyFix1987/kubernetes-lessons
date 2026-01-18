@@ -1,10 +1,12 @@
 """API endpoints for items."""
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
 from sqlalchemy.orm import Session
+from decimal import Decimal
 from app import crud, schemas
 from app.database import get_db
 from app.models import CategoryEnum, RecordTypeEnum
+from app.azure_storage import get_blob_service
 
 router = APIRouter(
     prefix="/items",
@@ -13,20 +15,68 @@ router = APIRouter(
 
 
 @router.post("/", response_model=schemas.ItemResponse, status_code=status.HTTP_201_CREATED)
-def create_item(
-    item: schemas.ItemCreate,
+async def create_item(
+    name: str = Form(..., min_length=1, max_length=255),
+    description: Optional[str] = Form(None),
+    category: Optional[CategoryEnum] = Form(None),
+    record_type: RecordTypeEnum = Form(...),
+    sum: Decimal = Form(..., gt=0),
+    photo: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db)
 ):
     """
-    Create a new financial record.
+    Create a new financial record with optional photo attachment.
     
     - **name**: Item name (required, 1-255 characters)
     - **description**: Item description (optional)
     - **category**: Category - food, car, or rent (optional)
     - **record_type**: Record type - income or expense (required)
     - **sum**: Amount in currency (required, must be positive)
+    - **photo**: Photo attachment (optional, max 10MB, jpg/png/gif/webp)
     """
-    return crud.create_item(db=db, item=item)
+    # Validate sum
+    if sum <= 0:
+        raise HTTPException(
+            status_code=400,
+            detail="Sum must be strictly positive"
+        )
+    
+    # Create item schema for validation
+    item_data = schemas.ItemCreate(
+        name=name,
+        description=description,
+        category=category,
+        record_type=record_type,
+        sum=sum
+    )
+    
+    # Create item in database first (to get ID)
+    db_item = crud.create_item(db=db, item=item_data, photo_url=None)
+    
+    # Upload photo if provided
+    photo_url = None
+    if photo and photo.filename:
+        try:
+            blob_service = get_blob_service()
+            photo_url = await blob_service.upload_photo(photo, db_item.id)
+            
+            # Update item with photo URL
+            db_item.photo_url = photo_url
+            db.commit()
+            db.refresh(db_item)
+            
+        except HTTPException:
+            # Re-raise HTTP exceptions (validation errors)
+            raise
+        except Exception as e:
+            # If photo upload fails, keep the record but log the error
+            # In production, you might want to delete the record or implement retry logic
+            raise HTTPException(
+                status_code=500,
+                detail=f"Record created but photo upload failed: {str(e)}"
+            )
+    
+    return db_item
 
 
 @router.get("/", response_model=schemas.ItemList)

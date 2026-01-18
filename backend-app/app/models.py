@@ -30,6 +30,7 @@ class Item(Base):
     category = Column(Enum(CategoryEnum), nullable=True, index=True)
     record_type = Column(Enum(RecordTypeEnum), nullable=False, index=True)
     sum = Column(Numeric(precision=10, scale=2), nullable=False)
+    photo_url = Column(String(500), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     

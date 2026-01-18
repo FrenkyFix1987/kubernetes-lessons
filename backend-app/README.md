@@ -9,6 +9,8 @@ A REST API built with FastAPI for tracking financial records (income and expense
 - ✅ Financial record tracking (income/expense)
 - ✅ Category classification (food, car, rent)
 - ✅ Precise currency handling with Decimal type
+- ✅ Photo attachments with Azure Blob Storage
+- ✅ File upload validation (size, type)
 - ✅ Filtering by category and record type
 - ✅ CRUD operations with validation
 - ✅ Request/response validation with Pydantic
@@ -252,6 +254,7 @@ curl -X DELETE "http://localhost:8000/items/1"
 | category | ENUM | Category: food, car, rent (optional, indexed) |
 | record_type | ENUM | Type: income or expense (required, indexed) |
 | sum | NUMERIC(10,2) | Amount in currency (required, must be > 0) |
+| photo_url | VARCHAR(500) | Azure Blob Storage URL for photo (optional) |
 | created_at | TIMESTAMP | Creation timestamp |
 | updated_at | TIMESTAMP | Last update timestamp |
 

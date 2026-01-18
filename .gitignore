@@ -1,0 +1,185 @@
+# ============================================
+# Python
+# ============================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+*.cover
+*.py,cover
+
+# ============================================
+# Environment Variables & Secrets
+# ============================================
+.env
+.env.local
+.env.*.local
+*.env
+credentials-*
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+
+# ============================================
+# Terraform
+# ============================================
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+crash.log
+crash.*.log
+*.tfvars
+*.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+.terraform.lock.hcl
+
+# ============================================
+# Kubernetes
+# ============================================
+kubeconfig
+*.kubeconfig
+kube-config
+*.kube
+secrets.yaml
+secret.yaml
+*-secret.yaml
+*-secrets.yaml
+
+# Helm encrypted secrets
+*.enc.yaml
+*secret.enc.yaml
+
+# ============================================
+# Docker
+# ============================================
+.dockerignore
+
+# ============================================
+# IDE & Editors
+# ============================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*~
+*.bak
+.project
+.classpath
+.settings/
+*.sublime-*
+*.code-workspace
+
+# ============================================
+# OS Files
+# ============================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# ============================================
+# Logs & Databases
+# ============================================
+*.log
+*.sql
+*.sqlite
+*.sqlite3
+*.db
+
+# ============================================
+# Application Specific
+# ============================================
+# Flask
+instance/
+.webassets-cache
+
+# FastAPI
+.pytest_cache/
+
+# Node modules (if any frontend tooling)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# ============================================
+# Temporary & Cache Files
+# ============================================
+*.tmp
+*.temp
+*.cache
+.cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
+
+# ============================================
+# Backups
+# ============================================
+*.backup
+*.bak
+*~
+
+# ============================================
+# Testing
+# ============================================
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+test-results/
+test-output/
+
+# ============================================
+# Build outputs
+# ============================================
+*.tar.gz
+*.zip
+*.rar
+*.7z

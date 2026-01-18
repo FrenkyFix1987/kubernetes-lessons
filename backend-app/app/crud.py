@@ -46,14 +46,15 @@ def get_items_count(
     return query.scalar()
 
 
-def create_item(db: Session, item: schemas.ItemCreate) -> models.Item:
+def create_item(db: Session, item: schemas.ItemCreate, photo_url: Optional[str] = None) -> models.Item:
     """Create a new item."""
     db_item = models.Item(
         name=item.name,
         description=item.description,
         category=item.category,
         record_type=item.record_type,
-        sum=item.sum
+        sum=item.sum,
+        photo_url=photo_url
     )
     db.add(db_item)
     db.commit()

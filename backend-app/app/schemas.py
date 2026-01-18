@@ -48,6 +48,7 @@ class ItemUpdate(BaseModel):
 class ItemResponse(ItemBase):
     """Schema for item response."""
     id: int
+    photo_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     
