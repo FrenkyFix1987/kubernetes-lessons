@@ -6,10 +6,14 @@ A simple web interface built with Flask for managing financial records (income a
 
 - ✅ Clean and responsive web interface
 - ✅ Create new financial records
+- ✅ Photo attachment upload
 - ✅ View all records with summary cards
 - ✅ Filter by category (food, car, rent)
 - ✅ Filter by record type (income, expense)
 - ✅ Calculate totals and balance
+- ✅ View full-size photos in new tab
+- ✅ Client-side photo preview
+- ✅ File validation (size, format)
 - ✅ User-friendly error handling
 - ✅ Form validation
 - ✅ Docker containerization

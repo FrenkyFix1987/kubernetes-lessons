@@ -114,6 +114,7 @@ def create():
         category = request.form.get('category')
         record_type = request.form.get('record_type')
         sum_value = request.form.get('sum', '').strip()
+        photo = request.files.get('photo')
         
         # Validate form data
         errors = []
@@ -139,6 +140,22 @@ def create():
             except (InvalidOperation, ValueError):
                 errors.append('Invalid amount format. Please enter a valid number.')
         
+        # Validate photo if provided
+        if photo and photo.filename:
+            # Check file size (10MB limit)
+            photo.seek(0, 2)  # Seek to end
+            file_size = photo.tell()
+            photo.seek(0)  # Reset to beginning
+            
+            if file_size > 10 * 1024 * 1024:
+                errors.append('Photo size must not exceed 10MB.')
+            
+            # Check file extension
+            allowed_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.webp'}
+            file_ext = os.path.splitext(photo.filename)[1].lower() # pHoTo.JpG
+            if file_ext not in allowed_extensions:
+                errors.append(f'Invalid photo format. Allowed: {", ".join(allowed_extensions)}')
+        
         if errors:
             for error in errors:
                 flash(error, 'error')
@@ -149,21 +166,33 @@ def create():
                 form_data=request.form
             )
         
-        # Prepare data for API
-        item_data = {
+        # Prepare multipart form data for API
+        form_data = {
             'name': name,
-            'description': description if description else None,
             'record_type': record_type,
             'sum': sum_value
         }
         
-        # Add category only if provided
+        # Add optional fields
+        if description:
+            form_data['description'] = description
         if category:
-            item_data['category'] = category
+            form_data['category'] = category
+        
+        files = {}
+        if photo and photo.filename:
+            # Reset file pointer and prepare for upload
+            photo.seek(0)
+            files['photo'] = (photo.filename, photo.stream, photo.content_type)
         
         try:
-            # Send POST request to backend API
-            response = requests.post(API_ITEMS_URL, json=item_data, timeout=5)
+            # Send POST request with multipart/form-data
+            response = requests.post(
+                API_ITEMS_URL, 
+                data=form_data,
+                files=files if files else None,
+                timeout=30  # Longer timeout for file uploads
+            )
             response.raise_for_status()
             
             flash(f'Successfully created {record_type} record: {name}', 'success')
@@ -207,8 +236,7 @@ def create():
         'create.html',
         categories=CATEGORIES,
         record_types=RECORD_TYPES,
-        form_data={}
-    )
+        form_data={}   )
 
 
 @app.route('/health')

@@ -8,7 +8,7 @@
 </div>
 
 <div class="form-container">
-    <form method="post" action="{{ url_for('create') }}" class="record-form">
+    <form method="post" action="{{ url_for('create') }}" class="record-form" enctype="multipart/form-data">
         <div class="form-group">
             <label for="name">Name *</label>
             <input 
@@ -79,6 +79,22 @@
             <small>Required. Must be greater than zero.</small>
         </div>
 
+        <div class="form-group">
+            <label for="photo">Photo Attachment</label>
+            <input 
+                type="file" 
+                id="photo" 
+                name="photo" 
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                class="file-input"
+            >
+            <small>Optional. Max 10MB. Formats: JPG, PNG, GIF, WebP.</small>
+            <div id="photo-preview" class="photo-preview" style="display: none;">
+                <img id="preview-image" src="" alt="Photo preview">
+                <button type="button" class="btn-remove-photo" onclick="removePhoto()">Remove</button>
+            </div>
+        </div>
+
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Create Record</button>
             <a href="{{ url_for('index') }}" class="btn btn-secondary">Cancel</a>
@@ -93,6 +109,36 @@
         <li><strong>Expense</strong>: Bills, shopping, entertainment, etc.</li>
         <li><strong>Categories</strong>: Use categories to organize your expenses</li>
         <li><strong>Amount</strong>: Enter positive values only (e.g., 150.75)</li>
+        <li><strong>Photo</strong>: Attach receipt or photo evidence (optional)</li>
     </ul>
 </div>
+
+<script>
+// Photo preview functionality
+document.getElementById('photo').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        // Validate file size
+        if (file.size > 10 * 1024 * 1024) {
+            alert('File size must not exceed 10MB');
+            e.target.value = '';
+            return;
+        }
+        
+        // Show preview
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('preview-image').src = e.target.result;
+            document.getElementById('photo-preview').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+});
+
+function removePhoto() {
+    document.getElementById('photo').value = '';
+    document.getElementById('photo-preview').style.display = 'none';
+    document.getElementById('preview-image').src = '';
+}
+</script>
 {% endblock %}

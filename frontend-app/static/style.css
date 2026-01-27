@@ -374,6 +374,73 @@ main {
     margin-top: 1rem;
 }
 
+/* File Input and Photo Preview */
+.file-input {
+    padding: 8px !important;
+    cursor: pointer;
+}
+
+.photo-preview {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.photo-preview img {
+    max-width: 100%;
+    max-height: 300px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-remove-photo {
+    margin-top: 0.5rem;
+    padding: 6px 12px;
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.btn-remove-photo:hover {
+    background-color: #c0392b;
+}
+
+/* Photo Display in Table */
+.photo-cell {
+    text-align: center;
+}
+
+.photo-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #3498db;
+    text-decoration: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.3s;
+}
+
+.photo-link:hover {
+    background-color: #e3f2fd;
+    color: #2980b9;
+}
+
+.photo-link svg {
+    width: 20px;
+    height: 20px;
+}
+
+.no-photo {
+    color: #95a5a6;
+    font-style: italic;
+}
+
 /* Info Box */
 .info-box {
     max-width: 800px;

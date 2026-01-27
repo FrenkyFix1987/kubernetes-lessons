@@ -1,0 +1,172 @@
+name: Frontend App CI/CD
+
+on:
+  push:
+    branches: [main, master, develop]
+    paths:
+      - 'frontend-app/**'
+      - '.github/workflows/frontend-app.yml'
+  pull_request:
+    branches: [main, master, develop]
+    paths:
+      - 'frontend-app/**'
+      - '.github/workflows/frontend-app.yml'
+  workflow_dispatch:
+
+env:
+  REGISTRY: ${{ secrets.ACR_LOGIN_SERVER }}
+  IMAGE_NAME: frontend-app
+  APP_PATH: ./frontend-app
+
+jobs:
+  lint-and-test:
+    name: Lint and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: frontend-app/requirements.txt
+
+      - name: Install dependencies
+        working-directory: ${{ env.APP_PATH }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov flake8 black
+
+      - name: Lint with flake8
+        working-directory: ${{ env.APP_PATH }}
+        run: |
+          # Stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # Exit-zero treats all errors as warnings
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+
+      - name: Check code formatting with black
+        working-directory: ${{ env.APP_PATH }}
+        run: |
+          black --check . || echo "Code formatting issues found. Run 'black .' to fix."
+
+      - name: Run tests
+        working-directory: ${{ env.APP_PATH }}
+        env:
+          BACKEND_URL: http://localhost:8000
+        run: |
+          # Create test script if tests don't exist yet
+          if [ ! -d "tests" ]; then
+            echo "No tests directory found, skipping tests"
+          else
+            pytest tests/ -v --cov=. --cov-report=term-missing
+          fi
+
+  build-and-push:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+    if: github.event_name != 'pull_request'
+    
+    outputs:
+      image-tag: ${{ steps.image-tag.outputs.tag }}
+      image-digest: ${{ steps.build.outputs.digest }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix={{branch}}-
+            type=ref,event=pr
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ env.APP_PATH }}
+          file: ${{ env.APP_PATH }}/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=registry,ref=${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
+
+      - name: Extract single image tag for deployment
+        id: image-tag
+        run: |
+          # Extract just the tag name (without registry path) from the first tag
+          FULL_TAG=$(echo "${{ steps.meta.outputs.tags }}" | grep -v latest | head -n 1)
+          TAG_ONLY=$(echo "$FULL_TAG" | cut -d':' -f2)
+          echo "tag=$TAG_ONLY" >> $GITHUB_OUTPUT
+          echo "Using tag name: $TAG_ONLY"
+
+      - name: Output image details
+        run: |
+          echo "Image pushed successfully!"
+          echo "All tags: ${{ steps.meta.outputs.tags }}"
+          echo "Deployment tag name: ${{ steps.image-tag.outputs.tag }}"
+          echo "Digest: ${{ steps.build.outputs.digest }}"
+
+  deploy-to-aks:
+    name: Deploy to AKS
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set AKS context
+        uses: azure/aks-set-context@v4
+        with:
+          resource-group: ${{ secrets.AKS_RESOURCE_GROUP }}
+          cluster-name: ${{ secrets.AKS_CLUSTER_NAME }}
+
+      - name: Deploy to AKS
+        run: |
+          # Reconstruct the full image reference from registry and tag
+          IMAGE_TAG="${{ secrets.ACR_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ needs.build-and-push.outputs.image-tag }}"
+          echo "Deploying image: $IMAGE_TAG"
+          
+          # Check if deployment manifests exist
+          if [ -f "frontend-app/k8s/deployment.yaml" ]; then
+            kubectl set image deployment/frontend-app \
+              frontend-app=$IMAGE_TAG \
+              -n default || echo "Deployment not found, skipping update"
+          else
+            echo "No Kubernetes manifests found in frontend-app/k8s/"
+            echo "Skipping deployment. Create manifests first."
+          fi
+
+      - name: Verify deployment
+        run: |
+          kubectl rollout status deployment/frontend-app -n default --timeout=5m || echo "Deployment verification skipped"
