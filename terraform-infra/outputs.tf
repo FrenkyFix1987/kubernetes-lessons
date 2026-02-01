@@ -104,12 +104,6 @@ output "sp_client_id" {
   sensitive   = true
 }
 
-output "sp_client_secret" {
-  value       = azuread_service_principal_password.github_actions.value
-  description = "Service Principal Client Secret for GitHub Actions"
-  sensitive   = true
-}
-
 output "subscription_id" {
   value       = data.azurerm_subscription.current.subscription_id
   description = "Azure Subscription ID"
@@ -118,15 +112,4 @@ output "subscription_id" {
 output "tenant_id" {
   value       = data.azurerm_client_config.current.tenant_id
   description = "Azure Tenant ID"
-}
-
-output "azure_credentials_json" {
-  value = jsonencode({
-    clientId       = azuread_application.github_actions.client_id
-    clientSecret   = azuread_service_principal_password.github_actions.value
-    subscriptionId = data.azurerm_subscription.current.subscription_id
-    tenantId       = data.azurerm_client_config.current.tenant_id
-  })
-  description = "Complete Azure credentials JSON for GitHub Actions AZURE_CREDENTIALS secret"
-  sensitive   = true
 }
